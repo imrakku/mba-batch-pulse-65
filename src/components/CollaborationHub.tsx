@@ -37,7 +37,23 @@ import {
   Download,
   Share2,
   AlertCircle,
-  Send
+  Send,
+  Video,
+  Phone,
+  Zap,
+  TrendingUp,
+  BarChart3,
+  MessageSquare,
+  Upload,
+  Eye,
+  Brain,
+  History,
+  Bookmark,
+  Award,
+  Lightbulb,
+  Settings,
+  RefreshCw,
+  Filter as FilterIcon
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudents";
 
@@ -84,6 +100,69 @@ interface Notification {
   isRead: boolean;
 }
 
+interface ChatMessage {
+  id: string;
+  studentId: number;
+  message: string;
+  author: string;
+  timestamp: Date;
+  type: 'text' | 'file' | 'meeting';
+  attachments?: FileAttachment[];
+}
+
+interface FileAttachment {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+  uploadedBy: string;
+  uploadedAt: Date;
+}
+
+interface Meeting {
+  id: string;
+  studentId: number;
+  title: string;
+  description: string;
+  scheduledBy: string;
+  startTime: Date;
+  endTime: Date;
+  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  meetingLink?: string;
+  participants: string[];
+}
+
+interface NoteTemplate {
+  id: string;
+  name: string;
+  content: string;
+  category: string;
+  priority: 'low' | 'medium' | 'high';
+  tags: string[];
+}
+
+interface ProgressMetric {
+  id: string;
+  studentId: number;
+  metric: string;
+  value: number;
+  target: number;
+  date: Date;
+  category: 'academic' | 'behavioral' | 'engagement' | 'attendance';
+}
+
+interface SmartRecommendation {
+  id: string;
+  studentId: number;
+  type: 'action' | 'meeting' | 'follow-up' | 'resource';
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  confidence: number;
+  suggestedDate?: Date;
+}
+
 export function CollaborationHub() {
   const { data: students } = useStudents();
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
@@ -99,12 +178,39 @@ export function CollaborationHub() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
   const [newAssignment, setNewAssignment] = useState({ title: '', description: '', assignedTo: '', dueDate: '' });
+  
+  // New feature states
+  const [activeTab, setActiveTab] = useState<'notes' | 'chat' | 'files' | 'meetings' | 'analytics' | 'timeline'>('notes');
+  const [chatMessage, setChatMessage] = useState('');
+  const [showMeetingDialog, setShowMeetingDialog] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [newMeeting, setNewMeeting] = useState({ 
+    title: '', 
+    description: '', 
+    date: '', 
+    startTime: '', 
+    endTime: '',
+    participants: [] as string[]
+  });
+  const [advancedSearch, setAdvancedSearch] = useState({
+    dateFrom: '',
+    dateTo: '',
+    authors: [] as string[],
+    hasAttachments: false
+  });
 
   // State management with localStorage persistence
   const [notes, setNotes] = useState<Note[]>([]);
   const [studentTags, setStudentTags] = useState<StudentTag[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [fileAttachments, setFileAttachments] = useState<FileAttachment[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [progressMetrics, setProgressMetrics] = useState<ProgressMetric[]>([]);
+  const [templates, setTemplates] = useState<NoteTemplate[]>([]);
+  const [recommendations, setRecommendations] = useState<SmartRecommendation[]>([]);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -213,6 +319,144 @@ export function CollaborationHub() {
     };
     setNotifications(prev => [notification, ...prev.slice(0, 9)]); // Keep only 10 notifications
     toast[type](message);
+  };
+
+  // Initialize templates
+  useEffect(() => {
+    if (templates.length === 0) {
+      const initialTemplates: NoteTemplate[] = [
+        {
+          id: '1',
+          name: 'Weekly Check-in',
+          content: 'Weekly progress update:\n• Academic performance:\n• Behavioral observations:\n• Next steps:',
+          category: 'meeting',
+          priority: 'medium',
+          tags: ['weekly', 'progress']
+        },
+        {
+          id: '2',
+          name: 'Academic Support',
+          content: 'Academic support needed:\n• Subject areas requiring attention:\n• Recommended resources:\n• Timeline for improvement:',
+          category: 'academic',
+          priority: 'high',
+          tags: ['support', 'academic']
+        },
+        {
+          id: '3',
+          name: 'Follow-up Action',
+          content: 'Follow-up required:\n• Previous discussion summary:\n• Action items:\n• Deadline:',
+          category: 'follow-up',
+          priority: 'medium',
+          tags: ['follow-up', 'action']
+        }
+      ];
+      setTemplates(initialTemplates);
+    }
+  }, [templates.length]);
+
+  // Initialize smart recommendations
+  useEffect(() => {
+    if (selectedStudent && recommendations.filter(r => r.studentId === selectedStudent).length === 0) {
+      const studentNotes = notes.filter(n => n.studentId === selectedStudent);
+      const newRecommendations: SmartRecommendation[] = [];
+      
+      // Generate recommendations based on note patterns
+      if (studentNotes.some(n => n.content.toLowerCase().includes('support'))) {
+        newRecommendations.push({
+          id: Date.now().toString(),
+          studentId: selectedStudent,
+          type: 'meeting',
+          title: 'Schedule Support Meeting',
+          description: 'Multiple notes mention support needs. Consider scheduling a one-on-one meeting.',
+          priority: 'high',
+          confidence: 0.85,
+          suggestedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        });
+      }
+      
+      if (studentNotes.length > 5) {
+        newRecommendations.push({
+          id: (Date.now() + 1).toString(),
+          studentId: selectedStudent,
+          type: 'action',
+          title: 'Progress Review',
+          description: 'High activity detected. Time for a comprehensive progress review.',
+          priority: 'medium',
+          confidence: 0.75
+        });
+      }
+      
+      setRecommendations(prev => [...prev, ...newRecommendations]);
+    }
+  }, [selectedStudent, notes, recommendations]);
+
+  const sendChatMessage = () => {
+    if (!chatMessage.trim() || !selectedStudent) return;
+    
+    const message: ChatMessage = {
+      id: Date.now().toString(),
+      studentId: selectedStudent,
+      message: chatMessage.trim(),
+      author: 'Current User',
+      timestamp: new Date(),
+      type: 'text'
+    };
+    
+    setChatMessages(prev => [message, ...prev]);
+    setChatMessage('');
+    addNotification('Message sent', 'success');
+  };
+
+  const scheduleMeeting = () => {
+    if (!newMeeting.title.trim() || !selectedStudent) return;
+    
+    const meeting: Meeting = {
+      id: Date.now().toString(),
+      studentId: selectedStudent,
+      title: newMeeting.title.trim(),
+      description: newMeeting.description.trim(),
+      scheduledBy: 'Current User',
+      startTime: new Date(`${newMeeting.date} ${newMeeting.startTime}`),
+      endTime: new Date(`${newMeeting.date} ${newMeeting.endTime}`),
+      status: 'scheduled',
+      participants: [selectedStudentData?.name || '', ...newMeeting.participants]
+    };
+    
+    setMeetings(prev => [meeting, ...prev]);
+    setNewMeeting({ title: '', description: '', date: '', startTime: '', endTime: '', participants: [] });
+    setShowMeetingDialog(false);
+    addNotification(`Meeting "${meeting.title}" scheduled`, 'success');
+  };
+
+  const applyTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      setNewNote(template.content);
+      setNoteCategory(template.category as any);
+      setNotePriority(template.priority);
+      setShowTemplateDialog(false);
+      addNotification(`Template "${template.name}" applied`, 'info');
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !selectedStudent) return;
+    
+    Array.from(files).forEach(file => {
+      const attachment: FileAttachment = {
+        id: Date.now().toString() + Math.random(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: URL.createObjectURL(file),
+        uploadedBy: 'Current User',
+        uploadedAt: new Date()
+      };
+      setFileAttachments(prev => [attachment, ...prev]);
+    });
+    
+    addNotification(`${files.length} file(s) uploaded`, 'success');
   };
 
   const toggleNoteSelection = (noteId: string) => {
@@ -527,89 +771,193 @@ export function CollaborationHub() {
           </CardContent>
         </Card>
 
-        {/* Notes & Communications */}
+        {/* Advanced Collaboration Hub */}
         <div className="lg:col-span-2 space-y-6">
           {selectedStudent ? (
             <>
-              {/* Add New Note */}
+              {/* Tab Navigation */}
               <Card className="dashboard-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Edit3 className="h-5 w-5 text-primary" />
-                    Add Note
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Textarea
-                    placeholder="Add a note about this student... Use @mentions for collaborative notes"
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                  
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <Select
-                      value={notePriority}
-                      onValueChange={(value: 'low' | 'medium' | 'high') => setNotePriority(value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border">
-                        <SelectItem value="low">Low Priority</SelectItem>
-                        <SelectItem value="medium">Medium Priority</SelectItem>
-                        <SelectItem value="high">High Priority</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={noteCategory}
-                      onValueChange={(value: 'general' | 'academic' | 'behavioral' | 'meeting' | 'follow-up') => setNoteCategory(value)}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border">
-                        <SelectItem value="general">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            General
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="academic">
-                          <div className="flex items-center gap-2">
-                            <Star className="h-4 w-4" />
-                            Academic
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="behavioral">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            Behavioral
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="meeting">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            Meeting
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="follow-up">
-                          <div className="flex items-center gap-2">
-                            <CheckSquare className="h-4 w-4" />
-                            Follow-up
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Button onClick={addNote} disabled={!newNote.trim()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Note
-                    </Button>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageCircle className="h-5 w-5 text-primary" />
+                      Collaboration Hub
+                    </CardTitle>
+                    {recommendations.filter(r => r.studentId === selectedStudent).length > 0 && (
+                      <Badge variant="secondary" className="animate-pulse">
+                        <Brain className="h-3 w-3 mr-1" />
+                        {recommendations.filter(r => r.studentId === selectedStudent).length} AI Suggestions
+                      </Badge>
+                    )}
                   </div>
-                </CardContent>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {[
+                      { id: 'notes', label: 'Notes', icon: FileText },
+                      { id: 'chat', label: 'Chat', icon: MessageSquare },
+                      { id: 'files', label: 'Files', icon: Paperclip },
+                      { id: 'meetings', label: 'Meetings', icon: Calendar },
+                      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+                      { id: 'timeline', label: 'Timeline', icon: History }
+                    ].map((tab) => {
+                      const Icon = tab.icon;
+                      return (
+                        <Button
+                          key={tab.id}
+                          variant={activeTab === tab.id ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setActiveTab(tab.id as any)}
+                          className="flex items-center gap-2"
+                        >
+                          <Icon className="h-4 w-4" />
+                          {tab.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </CardHeader>
               </Card>
+
+              {/* Smart Recommendations */}
+              {recommendations.filter(r => r.studentId === selectedStudent).length > 0 && (
+                <Card className="dashboard-card border-l-4 border-l-primary">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5 text-primary" />
+                      AI Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {recommendations.filter(r => r.studentId === selectedStudent).slice(0, 3).map((rec) => (
+                        <div key={rec.id} className="p-3 bg-muted/20 rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant={rec.priority === 'high' ? 'destructive' : rec.priority === 'medium' ? 'secondary' : 'outline'} className="text-xs">
+                                  {rec.priority}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">{Math.round(rec.confidence * 100)}% confidence</span>
+                              </div>
+                              <h4 className="font-medium text-sm">{rec.title}</h4>
+                              <p className="text-xs text-muted-foreground">{rec.description}</p>
+                            </div>
+                            <Button size="sm" variant="outline">
+                              <Zap className="h-3 w-3 mr-1" />
+                              Apply
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Tab Content */}
+              {activeTab === 'notes' && (
+                <>
+                  {/* Add New Note with Templates */}
+                  <Card className="dashboard-card">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Edit3 className="h-5 w-5 text-primary" />
+                          Add Note
+                        </div>
+                        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Bookmark className="h-4 w-4 mr-2" />
+                              Templates
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Choose Template</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-2">
+                              {templates.map((template) => (
+                                <div key={template.id} className="p-3 border rounded-lg cursor-pointer hover:bg-muted/50" onClick={() => applyTemplate(template.id)}>
+                                  <div className="font-medium">{template.name}</div>
+                                  <div className="text-sm text-muted-foreground">{template.content.substring(0, 100)}...</div>
+                                </div>
+                              ))}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Textarea
+                        placeholder="Add a note about this student... Use @mentions for collaborative notes"
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                      
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <Select
+                          value={notePriority}
+                          onValueChange={(value: 'low' | 'medium' | 'high') => setNotePriority(value)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border z-50">
+                            <SelectItem value="low">Low Priority</SelectItem>
+                            <SelectItem value="medium">Medium Priority</SelectItem>
+                            <SelectItem value="high">High Priority</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={noteCategory}
+                          onValueChange={(value: 'general' | 'academic' | 'behavioral' | 'meeting' | 'follow-up') => setNoteCategory(value)}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border z-50">
+                            <SelectItem value="general">
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                General
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="academic">
+                              <div className="flex items-center gap-2">
+                                <Star className="h-4 w-4" />
+                                Academic
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="behavioral">
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                Behavioral
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="meeting">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Meeting
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="follow-up">
+                              <div className="flex items-center gap-2">
+                                <CheckSquare className="h-4 w-4" />
+                                Follow-up
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Button onClick={addNote} disabled={!newNote.trim()}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Note
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
 
               {/* Add Tag */}
               <Card className="dashboard-card">
@@ -813,13 +1161,264 @@ export function CollaborationHub() {
                   </div>
                 </CardContent>
               </Card>
+              </>
+            )}
+
+            {/* Chat Tab */}
+            {activeTab === 'chat' && (
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                    Real-time Chat
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="h-64 border rounded-lg p-4 overflow-y-auto bg-muted/20">
+                      {chatMessages.filter(m => m.studentId === selectedStudent).map((message) => (
+                        <div key={message.id} className="mb-3 p-2 bg-background rounded">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium">{message.author}</span>
+                            <span className="text-xs text-muted-foreground">{message.timestamp.toLocaleTimeString()}</span>
+                          </div>
+                          <p className="text-sm">{message.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Type a message..."
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                      />
+                      <Button onClick={sendChatMessage} disabled={!chatMessage.trim()}>
+                        <Send className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Video className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Files Tab */}
+            {activeTab === 'files' && (
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Paperclip className="h-5 w-5 text-primary" />
+                      File Management
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <Button variant="outline" size="sm" onClick={() => document.getElementById('file-upload')?.click()}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Files
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {fileAttachments.filter(f => f.uploadedBy === 'Current User').map((file) => (
+                      <div key={file.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-sm">{file.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {(file.size / 1024).toFixed(1)} KB • {file.uploadedAt.toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Meetings Tab */}
+            {activeTab === 'meetings' && (
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      Meeting Scheduler
+                    </div>
+                    <Dialog open={showMeetingDialog} onOpenChange={setShowMeetingDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Schedule Meeting
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Schedule New Meeting</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Input
+                            placeholder="Meeting title..."
+                            value={newMeeting.title}
+                            onChange={(e) => setNewMeeting(prev => ({ ...prev, title: e.target.value }))}
+                          />
+                          <Textarea
+                            placeholder="Meeting description..."
+                            value={newMeeting.description}
+                            onChange={(e) => setNewMeeting(prev => ({ ...prev, description: e.target.value }))}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <Input
+                              type="date"
+                              value={newMeeting.date}
+                              onChange={(e) => setNewMeeting(prev => ({ ...prev, date: e.target.value }))}
+                            />
+                            <Input
+                              type="time"
+                              value={newMeeting.startTime}
+                              onChange={(e) => setNewMeeting(prev => ({ ...prev, startTime: e.target.value }))}
+                            />
+                            <Input
+                              type="time"
+                              value={newMeeting.endTime}
+                              onChange={(e) => setNewMeeting(prev => ({ ...prev, endTime: e.target.value }))}
+                            />
+                          </div>
+                          <Button onClick={scheduleMeeting} disabled={!newMeeting.title.trim()}>
+                            Schedule Meeting
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {meetings.filter(m => m.studentId === selectedStudent).map((meeting) => (
+                      <div key={meeting.id} className="p-3 border rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="font-medium">{meeting.title}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {meeting.startTime.toLocaleDateString()} at {meeting.startTime.toLocaleTimeString()}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">{meeting.description}</div>
+                          </div>
+                          <Badge variant={meeting.status === 'scheduled' ? 'secondary' : 'default'}>
+                            {meeting.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Analytics Tab */}
+            {activeTab === 'analytics' && (
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Student Analytics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-muted/20 rounded-lg">
+                      <div className="text-2xl font-bold">{notes.filter(n => n.studentId === selectedStudent).length}</div>
+                      <div className="text-sm text-muted-foreground">Total Notes</div>
+                    </div>
+                    <div className="p-4 bg-muted/20 rounded-lg">
+                      <div className="text-2xl font-bold">{meetings.filter(m => m.studentId === selectedStudent).length}</div>
+                      <div className="text-sm text-muted-foreground">Meetings Scheduled</div>
+                    </div>
+                    <div className="p-4 bg-muted/20 rounded-lg">
+                      <div className="text-2xl font-bold">{studentTagsFiltered.length}</div>
+                      <div className="text-sm text-muted-foreground">Active Tags</div>
+                    </div>
+                    <div className="p-4 bg-muted/20 rounded-lg">
+                      <div className="text-2xl font-bold">{chatMessages.filter(m => m.studentId === selectedStudent).length}</div>
+                      <div className="text-sm text-muted-foreground">Chat Messages</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Timeline Tab */}
+            {activeTab === 'timeline' && (
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5 text-primary" />
+                    Activity Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[...notes.filter(n => n.studentId === selectedStudent), 
+                      ...chatMessages.filter(m => m.studentId === selectedStudent).map(m => ({ ...m, category: 'chat' as const })),
+                      ...meetings.filter(m => m.studentId === selectedStudent).map(m => ({ ...m, timestamp: m.startTime, category: 'meeting' as const }))]
+                      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+                      .slice(0, 10)
+                      .map((item: any) => (
+                      <div key={item.id} className="flex items-start gap-3 p-3 bg-muted/20 rounded-lg">
+                        <div className="mt-1">
+                          {item.category === 'chat' && <MessageSquare className="h-4 w-4 text-blue-500" />}
+                          {item.category === 'meeting' && <Calendar className="h-4 w-4 text-green-500" />}
+                          {!item.category && <FileText className="h-4 w-4 text-purple-500" />}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium">
+                              {item.category === 'chat' ? 'Chat Message' : 
+                               item.category === 'meeting' ? 'Meeting' : 
+                               `${item.category} Note`}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {item.timestamp.toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {item.content || item.message || item.title}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             </>
           ) : (
             <Card className="dashboard-card">
               <CardContent className="py-12">
                 <div className="text-center text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Select a student to view and manage notes and tags</p>
+                  <p>Select a student to view and manage collaboration features</p>
                 </div>
               </CardContent>
             </Card>
