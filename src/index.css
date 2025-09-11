@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MBA 2027 Dashboard Design System - Professional Business School Aesthetic */
+
+@layer base {
+  :root {
+    /* Core Background Colors */
+    --background: 210 40% 98%;
+    --foreground: 215 28% 17%;
+
+    /* Surface Colors */
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+
+    /* Brand Colors - Professional Business Navy & Steel Blue */
+    --primary: 215 100% 15%;           /* Deep Navy */
+    --primary-foreground: 210 40% 98%;
+    --primary-light: 215 60% 25%;      /* Lighter Navy */
+    --primary-glow: 215 100% 30%;      /* Navy Glow */
+
+    --secondary: 215 28% 17%;          /* Professional Steel Blue */
+    --secondary-foreground: 210 40% 98%;
+    --secondary-light: 215 40% 35%;    /* Light Steel Blue */
+    --secondary-muted: 215 25% 75%;    /* Muted Steel Blue */
+
+    /* Neutral Colors */
+    --muted: 215 16% 94%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 215 20% 95%;
+    --accent-foreground: 215 28% 17%;
+
+    /* Utility Colors */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 215 100% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Interface Elements */
+    --border: 215 20% 88%;
+    --input: 215 20% 92%;
+    --ring: 215 100% 50%;
+
+    /* Advanced Design Tokens */
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 50%, hsl(var(--secondary)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(var(--primary) / 0.05);
+    --shadow: 0 4px 6px -1px hsl(var(--primary) / 0.1), 0 2px 4px -2px hsl(var(--primary) / 0.1);
+    --shadow-md: 0 10px 15px -3px hsl(var(--primary) / 0.1), 0 4px 6px -4px hsl(var(--primary) / 0.1);
+    --shadow-lg: 0 25px 50px -12px hsl(var(--primary) / 0.25);
+    --shadow-glow: 0 0 40px hsl(var(--secondary) / 0.3);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark Mode - Sophisticated Business School Theme */
+    --background: 215 28% 8%;
+    --foreground: 210 40% 95%;
+
+    --card: 215 25% 12%;
+    --card-foreground: 210 40% 95%;
+
+    --popover: 215 25% 12%;
+    --popover-foreground: 210 40% 95%;
+
+    --primary: 215 50% 35%;             /* Steel Blue in dark mode */
+    --primary-foreground: 210 40% 95%;
+    --primary-light: 215 50% 45%;
+    --primary-glow: 215 50% 55%;
+
+    --secondary: 215 25% 25%;           /* Dark Steel Blue */
+    --secondary-foreground: 210 40% 95%;
+    --secondary-light: 215 30% 35%;
+    --secondary-muted: 215 20% 20%;
+
+    --muted: 215 25% 15%;
+    --muted-foreground: 215 16% 65%;
+
+    --accent: 215 25% 18%;
+    --accent-foreground: 210 40% 95%;
+
+    --success: 142 71% 55%;
+    --warning: 38 92% 60%;
+    --destructive: 0 84% 70%;
+
+    --border: 215 25% 18%;
+    --input: 215 25% 18%;
+    --ring: 45 100% 65%;
+
+    /* Dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--secondary-light)) 50%, hsl(var(--primary)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+
+    --sidebar-background: 215 28% 8%;
+    --sidebar-foreground: 210 40% 95%;
+    --sidebar-primary: 215 50% 35%;
+    --sidebar-primary-foreground: 210 40% 95%;
+    --sidebar-accent: 215 25% 15%;
+    --sidebar-accent-foreground: 210 40% 95%;
+    --sidebar-border: 215 25% 18%;
+    --sidebar-ring: 215 50% 35%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Typography */
+  .font-heading {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  .font-body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 400;
+  }
+}
+
+@layer components {
+  /* Professional Component Styles */
+  .dashboard-card {
+    @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-300;
+  }
+
+  .stat-card {
+    @apply dashboard-card p-6 bg-gradient-to-br from-card to-muted/20;
+  }
+
+  .hero-section {
+    @apply bg-gradient-to-br from-primary via-primary-light to-secondary text-primary-foreground;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-primary-light text-primary-foreground hover:shadow-lg transition-all duration-300 rounded-lg font-medium;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-r from-secondary to-secondary-light text-secondary-foreground hover:shadow-lg transition-all duration-300 rounded-lg font-medium;
+  }
+
+  .profile-image {
+    @apply w-12 h-12 rounded-full border-2 border-secondary/20 object-cover;
+  }
+
+  .badge-professional {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20;
+  }
+
+  .search-input {
+    @apply w-full px-4 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-secondary focus:border-transparent transition-all duration-200;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
