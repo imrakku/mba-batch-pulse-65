@@ -46,7 +46,6 @@ export async function fetchStudentsFromSheet(): Promise<Student[]> {
             .filter((r) => r["Roll No"] && r["Name of Student"]) 
             .map((r, idx) => {
               const totalExpMonths = toInt(r["Total Full Time Experience (In months)"]) ?? 0;
-              const totalExp = Math.round(totalExpMonths / 12 * 10) / 10; // Convert months to years, round to 1 decimal
               const ugPct = toNumber(r["UG percentage"]);
 
               const s: Student = {
@@ -73,7 +72,7 @@ export async function fetchStudentsFromSheet(): Promise<Student[]> {
                 internshipCompany: r["Mandatory Internship Company Name"] || undefined,
                 internshipJobTitle: r["Mandatory Internship Job Title"] || undefined,
                 internshipDuration: r["Mandatory Internship Duration"] || undefined,
-                totalExperience: totalExp,
+                totalExperience: totalExpMonths,
                 workExperience1Company: r["Work Experience 1 Company Name"] || undefined,
                 workExperience1Title: r["Work Experience 1 Job Title"] || undefined,
                 workExperience1Duration: r["Work Experience 1 Duration"] || undefined,
