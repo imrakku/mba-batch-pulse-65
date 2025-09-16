@@ -8,17 +8,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { 
   MessageCircle, 
   Tag, 
-  Users, 
-  Mail, 
+  Users,
+  Mail,
+  Archive,
+  Brain,
+  Calendar,
   Plus,
   Edit3,
-  Archive,
   Hash,
   Clock,
   Search,
@@ -28,9 +29,7 @@ import {
   X,
   Paperclip,
   AtSign,
-  Bell,
   FileText,
-  Calendar,
   Target,
   CheckSquare,
   Star,
@@ -40,13 +39,11 @@ import {
   Send,
   Video,
   Phone,
-  Zap,
   TrendingUp,
   BarChart3,
   MessageSquare,
   Upload,
   Eye,
-  Brain,
   History,
   Bookmark,
   Award,
@@ -56,6 +53,11 @@ import {
   Filter as FilterIcon
 } from "lucide-react";
 import { useStudents } from "@/hooks/useStudents";
+import { CollaborationTabs } from "./collaboration/CollaborationTabs";
+import { StudentSelector } from "./collaboration/StudentSelector";
+import { QuickActions } from "./collaboration/QuickActions";
+import { NotificationBar } from "./collaboration/NotificationBar";
+import { NotesSection } from "./collaboration/NotesSection";
 
 interface Note {
   id: string;
@@ -605,183 +607,90 @@ export function CollaborationHub() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Notifications Bar */}
-      {notifications.length > 0 && (
-        <Alert className="border-l-4 border-l-primary">
-          <Bell className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>{notifications[0].message}</span>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setNotifications(prev => prev.slice(1))}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+      <NotificationBar 
+        notifications={notifications}
+        onDismiss={() => setNotifications(prev => prev.slice(1))}
+      />
 
       {/* Quick Actions */}
-      <Card className="dashboard-card">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Collaboration Tools
+      <QuickActions
+        selectedNotesCount={selectedNotes.size}
+        selectedStudent={selectedStudent}
+        onBulkEmail={handleBulkEmail}
+        onBulkTag={() => handleBulkTag('bulk-action')}
+        onBulkExport={handleBulkExport}
+        onCreateAssignment={() => setShowAssignmentDialog(true)}
+      />
+
+      {/* Assignment Dialog */}
+      <Dialog open={showAssignmentDialog} onOpenChange={setShowAssignmentDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-gradient">Create New Assignment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Assignment title..."
+              value={newAssignment.title}
+              onChange={(e) => setNewAssignment(prev => ({ ...prev, title: e.target.value }))}
+              className="focus:ring-primary/20"
+            />
+            <Textarea
+              placeholder="Assignment description..."
+              value={newAssignment.description}
+              onChange={(e) => setNewAssignment(prev => ({ ...prev, description: e.target.value }))}
+              className="focus:ring-primary/20"
+            />
+            <Input
+              type="date"
+              value={newAssignment.dueDate}
+              onChange={(e) => setNewAssignment(prev => ({ ...prev, dueDate: e.target.value }))}
+              className="focus:ring-primary/20"
+            />
+            <div className="flex gap-2">
+              <Button 
+                onClick={createAssignment} 
+                disabled={!newAssignment.title.trim()}
+                className="flex-1 hover:scale-105 transition-all duration-200"
+              >
+                Create Assignment
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAssignmentDialog(false)}
+                className="hover:scale-105 transition-all duration-200"
+              >
+                Cancel
+              </Button>
             </div>
-            {selectedNotes.size > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {selectedNotes.size} selected
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {bulkActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Button
-                  key={action.id}
-                  variant="outline"
-                  className="h-20 flex flex-col gap-2"
-                  onClick={action.action}
-                  disabled={selectedNotes.size === 0}
-                >
-                  <Icon className="h-6 w-6" />
-                  <span className="text-sm">{action.label}</span>
-                </Button>
-              );
-            })}
-            <Dialog open={showAssignmentDialog} onOpenChange={setShowAssignmentDialog}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col gap-2"
-                  disabled={!selectedStudent}
-                >
-                  <Target className="h-6 w-6" />
-                  <span className="text-sm">Create Assignment</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Assignment</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Input
-                    placeholder="Assignment title..."
-                    value={newAssignment.title}
-                    onChange={(e) => setNewAssignment(prev => ({ ...prev, title: e.target.value }))}
-                  />
-                  <Textarea
-                    placeholder="Assignment description..."
-                    value={newAssignment.description}
-                    onChange={(e) => setNewAssignment(prev => ({ ...prev, description: e.target.value }))}
-                  />
-                  <Input
-                    type="date"
-                    value={newAssignment.dueDate}
-                    onChange={(e) => setNewAssignment(prev => ({ ...prev, dueDate: e.target.value }))}
-                  />
-                  <div className="flex gap-2">
-                    <Button onClick={createAssignment} disabled={!newAssignment.title.trim()}>
-                      Create Assignment
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowAssignmentDialog(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Student Selection */}
-        <Card className="dashboard-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Select Student
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select
-              value={selectedStudent?.toString() || ""}
-              onValueChange={(value) => setSelectedStudent(parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a student..." />
-              </SelectTrigger>
-              <SelectContent className="bg-background border">
-                {students?.slice(0, 20).map((student) => (
-                  <SelectItem key={student.id} value={student.id.toString()}>
-                    {student.name} ({student.rollNo})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {selectedStudentData && (
-              <div className="mt-4 p-4 bg-muted/20 rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar>
-                    <AvatarFallback>
-                      {selectedStudentData.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{selectedStudentData.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {selectedStudentData.rollNo} • {selectedStudentData.course}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Student Tags */}
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {studentTagsFiltered.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      className={`text-xs ${getTagColor(tag.color)} cursor-pointer hover:opacity-80`}
-                      onClick={() => removeTag(tag.id)}
-                      title="Click to remove tag"
-                    >
-                      <Hash className="h-3 w-3 mr-1" />
-                      {tag.tag}
-                      <X className="h-3 w-3 ml-1" />
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>UG: {selectedStudentData.ugPercentage != null ? `${selectedStudentData.ugPercentage}%` : '—'}</div>
-                  <div>Exp: {selectedStudentData.totalExperience || 0}yr</div>
-                  <div>Notes: {notes.filter(n => n.studentId === selectedStudent).length}</div>
-                  <div>Tags: {studentTagsFiltered.length}</div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <StudentSelector
+          students={students}
+          selectedStudent={selectedStudent}
+          onStudentChange={setSelectedStudent}
+          studentTags={studentTags}
+          onRemoveTag={removeTag}
+          notesCount={notes.filter(n => n.studentId === selectedStudent).length}
+        />
 
         {/* Advanced Collaboration Hub */}
         <div className="lg:col-span-2 space-y-6">
           {selectedStudent ? (
             <>
               {/* Tab Navigation */}
-              <Card className="dashboard-card">
-                <CardHeader className="pb-2">
+              <Card className="dashboard-card animate-fade-in">
+                <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <MessageCircle className="h-5 w-5 text-primary" />
-                      Collaboration Hub
+                      <span className="text-gradient">Collaboration Hub</span>
                     </CardTitle>
                     {recommendations.filter(r => r.studentId === selectedStudent).length > 0 && (
                       <Badge variant="secondary" className="animate-pulse">
@@ -790,71 +699,61 @@ export function CollaborationHub() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {[
-                      { id: 'notes', label: 'Notes', icon: FileText },
-                      { id: 'chat', label: 'Chat', icon: MessageSquare },
-                      { id: 'files', label: 'Files', icon: Paperclip },
-                      { id: 'meetings', label: 'Meetings', icon: Calendar },
-                      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-                      { id: 'timeline', label: 'Timeline', icon: History }
-                    ].map((tab) => {
-                      const Icon = tab.icon;
-                      return (
-                        <Button
-                          key={tab.id}
-                          variant={activeTab === tab.id ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setActiveTab(tab.id as any)}
-                          className="flex items-center gap-2"
-                        >
-                          <Icon className="h-4 w-4" />
-                          {tab.label}
-                        </Button>
-                      );
-                    })}
+                  <div className="mt-4">
+                    <CollaborationTabs 
+                      activeTab={activeTab}
+                      onTabChange={(tab) => setActiveTab(tab as any)}
+                    />
                   </div>
                 </CardHeader>
               </Card>
 
               {/* Smart Recommendations */}
-              {recommendations.filter(r => r.studentId === selectedStudent).length > 0 && (
-                <Card className="dashboard-card border-l-4 border-l-primary">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Brain className="h-5 w-5 text-primary" />
-                      AI Recommendations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {recommendations.filter(r => r.studentId === selectedStudent).slice(0, 3).map((rec) => (
-                        <div key={rec.id} className="p-3 bg-muted/20 rounded-lg">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant={rec.priority === 'high' ? 'destructive' : rec.priority === 'medium' ? 'secondary' : 'outline'} className="text-xs">
-                                  {rec.priority}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">{Math.round(rec.confidence * 100)}% confidence</span>
-                              </div>
-                              <h4 className="font-medium text-sm">{rec.title}</h4>
-                              <p className="text-xs text-muted-foreground">{rec.description}</p>
-                            </div>
-                            <Button size="sm" variant="outline">
-                              <Zap className="h-3 w-3 mr-1" />
-                              Apply
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <SmartRecommendations
+                recommendations={recommendations}
+                studentId={selectedStudent}
+                onApplyRecommendation={(id) => {
+                  addNotification('Recommendation applied successfully', 'success');
+                  setRecommendations(prev => prev.filter(r => r.id !== id));
+                }}
+              />
 
               {/* Tab Content */}
               {activeTab === 'notes' && (
+                <NotesSection
+                  notes={notes}
+                  selectedStudent={selectedStudent}
+                  newNote={newNote}
+                  setNewNote={setNewNote}
+                  notePriority={notePriority}
+                  setNotePriority={setNotePriority}
+                  noteCategory={noteCategory}
+                  setNoteCategory={setNoteCategory}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  filterPriority={filterPriority}
+                  setFilterPriority={setFilterPriority}
+                  filterCategory={filterCategory}
+                  setFilterCategory={setFilterCategory}
+                  editingNoteId={editingNoteId}
+                  setEditingNoteId={setEditingNoteId}
+                  selectedNotes={selectedNotes}
+                  toggleNoteSelection={toggleNoteSelection}
+                  templates={templates}
+                  onAddNote={addNote}
+                  onUpdateNote={updateNote}
+                  onDeleteNote={deleteNote}
+                  onApplyTemplate={applyTemplate}
+                  onAddTag={(noteId, tag) => {
+                    setNotes(prev => prev.map(note => 
+                      note.id === noteId 
+                        ? { ...note, tags: [...note.tags, tag] }
+                        : note
+                    ));
+                  }}
+                  addNotification={addNotification}
+                />
+              )}
                 <>
                   {/* Add New Note with Templates */}
                   <Card className="dashboard-card">
